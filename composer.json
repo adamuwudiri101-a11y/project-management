@@ -1,0 +1,13 @@
+{
+  "name": "naub/fyp-portal",
+  "description": "NAUB Final Year Project Management and Supervision Portal",
+  "type": "project",
+  "require": {
+    "php": ">=8.0",
+    "phpmailer/phpmailer": "^7.0"
+  },
+  "config": {
+    "sort-packages": true,
+    "optimize-autoloader": true
+  }
+}

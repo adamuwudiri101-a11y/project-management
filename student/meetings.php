@@ -1,0 +1,18 @@
+<?php
+require_once dirname(__DIR__).'/includes/auth.php';$u=require_role('student');$q=db()->prepare('SELECT m.*,p.title,p.reference_no,s.first_name supervisor_first,s.last_name supervisor_last FROM supervision_meetings m JOIN projects p ON p.id=m.project_id JOIN project_members pm ON pm.project_id=p.id JOIN users s ON s.id=m.supervisor_id WHERE pm.student_id=? ORDER BY m.meeting_at DESC');$q->execute([$u['id']]);$rows=$q->fetchAll();$pageTitle='Supervision Meetings';$crumbTrail=['Meetings'];require dirname(__DIR__).'/includes/header.php';
+?>
+<?php $now=time();$upcoming=[];$previous=[];foreach($rows as $r){if($r['status']==='scheduled'&&strtotime($r['meeting_at'])>=$now-86400)$upcoming[]=$r;else $previous[]=$r;} usort($upcoming,fn($a,$b)=>strcmp($a['meeting_at'],$b['meeting_at']));
+ $completed=count(array_filter($rows,fn($r)=>$r['status']==='completed'));$followUp=count(array_filter($rows,fn($r)=>$r['status']==='completed'&&!empty($r['tasks_assigned'])));$next=$upcoming[0]['meeting_at']??null; ?>
+<div class="row g-3 mb-3">
+  <div class="col-md-4"><div class="stat-card"><div class="stat-label">Upcoming</div><div class="stat-value text-blue"><?= count($upcoming) ?></div><small class="stat-sub"><?= $next?'Next: '.e(ui_date($next)):'No meeting scheduled' ?></small></div></div>
+  <div class="col-md-4"><div class="stat-card"><div class="stat-label">Completed</div><div class="stat-value text-green"><?= (int)$completed ?></div><small class="stat-sub">Recorded sessions</small></div></div>
+  <div class="col-md-4"><div class="stat-card"><div class="stat-label">Follow-up</div><div class="stat-value text-gold"><?= (int)$followUp ?></div><small class="stat-sub">Meetings with assigned tasks</small></div></div>
+</div>
+<section class="card filter-bar mb-3"><div class="filter-form"><label class="search-box"><?= ui_icon('search') ?><input type="search" class="form-control" placeholder="Search records..." aria-label="Search meetings" data-live-filter=".meeting-row"></label><span class="filter-note">Upcoming &amp; Previous Records</span></div></section>
+<section class="card p-4 mb-3"><h2 class="section-heading">Upcoming Meetings</h2><div class="row-table"><div class="row-table-head">Date / Purpose / Participant / Status</div>
+<?php foreach($upcoming as $r): ?><div class="meeting-row"><div><strong><?= e(ui_date($r['meeting_at'],'D, M j, Y · g:i A')) ?> | <?= e(ui_label($r['meeting_type'])) ?> | <?= e(trim($r['supervisor_first'].' '.$r['supervisor_last'])) ?></strong><p><?= e($r['reference_no'].' · '.$r['title']) ?></p></div><?= ui_pill($r['status']) ?></div><?php endforeach; ?>
+<?php if(!$upcoming): ?><div class="empty-state m-3">No upcoming meetings have been scheduled.</div><?php endif; ?></div></section>
+<section class="card p-4"><h2 class="section-heading">Previous Meeting History</h2><div class="row-table"><div class="row-table-head">Date / Purpose / Participant / Notes / Status</div>
+<?php foreach($previous as $r): ?><div class="meeting-row"><div><strong><?= e(ui_date($r['meeting_at'],'M j, Y')) ?> | <?= e(ui_label($r['meeting_type'])) ?> | <?= e(trim($r['supervisor_first'].' '.$r['supervisor_last'])) ?></strong><p><?= nl2br(e($r['discussion_notes'])) ?></p><?php if(!empty($r['tasks_assigned'])): ?><p class="task-line"><strong>Tasks:</strong> <?= e($r['tasks_assigned']) ?></p><?php endif; ?><?php if(!empty($r['next_meeting_at'])): ?><p class="task-line"><strong>Next meeting:</strong> <?= e(ui_date($r['next_meeting_at'],'M j, Y · g:i A')) ?></p><?php endif; ?></div><?= ui_pill($r['status']) ?></div><?php endforeach; ?>
+<?php if(!$previous): ?><div class="empty-state m-3">No meeting records have been shared yet.</div><?php endif; ?></div></section>
+<?php require dirname(__DIR__).'/includes/footer.php'; ?>

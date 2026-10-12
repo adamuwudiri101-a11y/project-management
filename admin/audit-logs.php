@@ -1,0 +1,8 @@
+<?php
+require_once dirname(__DIR__).'/includes/auth.php';require_role('administrator');$rows=db()->query('SELECT a.*,u.first_name,u.last_name FROM audit_logs a LEFT JOIN users u ON u.id=a.user_id ORDER BY a.created_at DESC LIMIT 500')->fetchAll();$pageTitle='System Activity Log';$crumbTrail=['Admin','System Activity'];require dirname(__DIR__).'/includes/header.php';
+?>
+<section class="card filter-bar mb-3"><div class="filter-form"><label class="search-box"><?= ui_icon('search') ?><input type="search" class="form-control" placeholder="Search activity records..." aria-label="Search activity" data-live-filter="#auditTable tbody tr"></label><span class="filter-note">Latest 500 recorded actions</span></div></section>
+<section class="card p-4"><h2 class="section-heading">System Activity Records</h2><div class="table-responsive"><table class="table table-soft" id="auditTable"><thead><tr><th>Date</th><th>User</th><th>Action</th><th>Record</th><th>Description</th><th>IP</th></tr></thead><tbody>
+<?php foreach($rows as $r): ?><tr><td class="text-muted text-nowrap"><?= e(ui_date($r['created_at'],'M j, Y · g:i A')) ?></td><td class="fw-bold"><?= e(trim(($r['first_name']??'System').' '.($r['last_name']??''))) ?></td><td><span class="ui-pill is-info"><?= e(ui_label($r['action'])) ?></span></td><td><?= e(trim(($r['entity_type']??'').' '.($r['entity_id']??''))) ?></td><td><?= e($r['description']) ?></td><td class="text-muted"><?= e($r['ip_address']??'') ?></td></tr><?php endforeach; ?>
+<?php if(!$rows): ?><tr><td colspan="6"><div class="empty-state">No activity has been recorded yet.</div></td></tr><?php endif; ?></tbody></table></div></section>
+<?php require dirname(__DIR__).'/includes/footer.php'; ?>
